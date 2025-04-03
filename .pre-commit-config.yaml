@@ -1,0 +1,22 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3.12
+        types: [python]  # Explicitly specify Python files
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
+    hooks:
+      - id: ruff
+        args: [ --fix ]
+        types: [python]  # Explicitly specify Python files
+      - id: ruff-format
+        types: [python]  # Explicitly specify Python files
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        files: ^(app|tests)/.*\.py$  # Check both app and tests directories
