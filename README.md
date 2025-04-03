@@ -1,4 +1,4 @@
-📌 Project Setup Requirements (needed to be installed)
+# 📌 Project Setup Requirements (needed to be installed)
 
 ### 🔹 Python 3.12
 
@@ -797,7 +797,6 @@ alembic history
 
 > [!NOTE]
 > This approach is perfect for local development as it gives you a clean migration history while preserving your database structure and data. It's especially useful when you've accumulated many incremental migrations during development that you don't need to preserve for production.
->
 
 ### 🔹 Python 3.12
 
