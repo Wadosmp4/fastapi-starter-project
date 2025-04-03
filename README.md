@@ -1435,6 +1435,113 @@ alembic upgrade head --sql
 
 ## 📌 Cleaning Up and Resetting Migrations
 
+ Here's a step-by-step guide to reset your migrations while preserving your database structure:
+
+## 1. Configure Database Connection
+
+First, ensure your database is running and your connection settings are configured:
+
+```bash
+# In your .env file
+POSTGRES_HOST=localhost  # Change to localhost if using direct connection
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=fastapi
+```
+
+## 2. Start the Database
+
+Make sure your database is running:
+
+```bash
+# Start just the database container
+docker compose up db
+```
+
+## 3. Verify Database Connection
+
+Test your connection to ensure everything is working:
+
+```bash
+# Test connection using psql
+psql -U postgres -h localhost -d fastapi -c "SELECT 'Connection successful';"
+```
+
+## 4. Create a Backup (Optional but Recommended)
+
+Before making changes, back up your existing migrations and database:
+
+```bash
+# Backup migrations
+mkdir -p alembic/versions_backup
+cp -r alembic/versions/* alembic/versions_backup/
+
+# Backup database (optional)
+pg_dump -U postgres -h localhost -d fastapi > db_backup.sql
+```
+
+## 5. Reset Alembic Version Tracking
+
+Remove migration tracking from the database:
+
+```bash
+# Reset Alembic migration state
+alembic stamp base
+```
+
+## 6. Verify Reset
+
+Check that the version tracking has been reset:
+
+```bash
+# Should show no current revision
+alembic current
+```
+
+## 7. Remove Migration Files
+
+Now you can safely delete the migration files:
+
+```bash
+# Remove all migrations
+rm -rf alembic/versions/*.py
+```
+
+## 8. Create a Fresh Migration
+
+Generate a new migration that captures the current state of your database:
+
+```bash
+# Create new migration capturing current schema
+alembic revision --autogenerate -m "fresh_start"
+```
+
+## 9. Mark the Migration as Applied
+
+Tell Alembic that this new migration has already been applied:
+
+```bash
+# Mark as applied
+alembic stamp head
+```
+
+## 10. Verify Success
+
+Confirm everything worked correctly:
+
+```bash
+# Should show your new migration id
+alembic current
+
+# Check migration history - should just show your new migration
+alembic history
+```
+
+> [!NOTE]
+> This approach is perfect for local development as it gives you a clean migration history while preserving your database structure and data. It's especially useful when you've accumulated many incremental migrations during development that you don't need to preserve for production.
+>
+
 ### 🔹 Delete All Migrations and Reset
 
 ```
