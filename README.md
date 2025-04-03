@@ -1,1544 +1,507 @@
-# 📌 Project Setup Requirements (needed to be installed)
+# SQLAlchemy Relationships in FastAPI: A Comprehensive Guide
 
-### 🔹 Python 3.12
+## Relational Database Fundamentals
 
-### 🔹 Docker and docker compose
+### What is a Relational Database?
 
-<br>
+Relational databases organize data into tables (relations) with rows (records) and columns (attributes). Unlike flat files, relational databases enforce data integrity and provide mechanisms for establishing relationships between different data entities.
 
-# 🚀 Python Project Setup Workflow
+## Database Relationships and Physical Storage
 
-## 🏗️ Step-by-Step Guide
+### Primary and Foreign Keys
 
-### 1️⃣ Set Up Virtual Environment
+- **Primary Key**: A column or combination of columns that uniquely identifies each row in a table
+- **Foreign Key**: A column that references the primary key of another table, establishing a relationship
 
-```
-python3 -m venv .venv      # Creates the virtual environment
-source .venv/bin/activate  # Activate the virtual environment (Linux/macOS)
-.venv\Scripts\activate     # Activate the virtual environment (Windows)
-```
+### Relationship Types and Implementations
 
-<br>
+#### One-to-Many Relationships
 
-### 2️⃣ Install Dependencies
+**Description**: A one-to-many relationship exists when one record in table A can be associated with multiple records in table B, but each record in table B is associated with only one record in table A.
 
-We use `uv` for faster dependency management. Install it first:
+Example: A user can create many posts, but each post has only one author.
 
-```bash
-# Install uv
-pip install uv
-```
+**Database Table Structure:**
 
-Run this command to install packages and dependencies:
+**Users Table:**
 
-```bash
-# Install all dependencies including dev tools
-uv sync --all-extras
-```
 
-If you installed additional packages, add them to pyproject.toml:
+| id | username | email     |
+| -- | -------- | --------- |
+| 1  | john     | j@ex.com  |
+| 2  | jane     | ja@ex.com |
 
-```bash
-# Add a runtime dependency
-uv pip add package_name --sync
+**Posts Table:**
 
-# Add a development dependency
-uv pip add package_name --sync --dev
-```
 
-> [!TIP]
-> This way we ensure tracking of all packages in pyproject.toml with proper versioning
+| id | title  | content  | user_id |
+| -- | ------ | -------- | ------- |
+| 1  | Title1 | Content1 | 1       |
+| 2  | Title2 | Content2 | 1       |
+| 3  | Title3 | Content3 | 2       |
 
-<br>
-
-### 3️⃣ Set Up Linters and Pre-commit Hooks
-
-This command will make linters run before each commit and help you to refactor code and keep everything clean:
-
-```bash
-pre-commit install
-```
-
-> [!TIP]
-> Run it only once and all needed dependencies will be installed
-
-<br>
-
-This command will help you when you want to run linters, but do not want to create a commit:
-
-```bash
-pre-commit run --all-files
-```
-
-> [!TIP]
-> Can be run multiple times to ensure code quality
-
-<br>
-
-### 4️⃣ Create .env file
-
-Example content of file for a successful build and start:
-
-```
-DATABASE_PORT=5432
-POSTGRES_PASSWORD=password
-POSTGRES_USER=postgres
-POSTGRES_DB=fastapi
-POSTGRES_HOST=db
-
-REDIS_PASSWORD=password
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-MAKE_MIGRATIONS=false
-MAKE_MIGRATION_DOWNGRADE=false
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-<br>
-
----
-
-# 📌 Code Quality Tools
-
-We use the following tools to maintain code quality:
-
-### 🔹 Ruff
-
-> [!NOTE]
-> Ruff is an extremely fast Python linter and formatter, written in Rust. It handles both linting (code quality checks) and formatting (code style) in one tool, replacing both Flake8 and isort.
-
-### 🔹 Black
-
-> [!NOTE]
-> Black is the uncompromising Python code formatter. It formats your code in a consistent style with little configuration needed.
-
-### 🔹 MyPy
-
-> [!NOTE]
-> MyPy is a static type checker for Python. It helps catch type errors before runtime, making your code more reliable.
-
-### 🔹 Pre-commit
-
-> [!NOTE]
-> Pre-commit manages git hooks to ensure code quality checks run before each commit, preventing problematic code from being committed.
-
-<br>
-
-To ignore specific Ruff warnings in your code, you can use comments:
+**Python Model Definition:**
 
 ```python
-# For a specific line:
-some_code = "example"  # noqa: E501
+# User Model Definition
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+  
+    # Define the relationship to posts
+    # This creates a virtual 'posts' attribute that can be accessed like a list
+    posts = relationship("Post", back_populates="author")
 
-# For multiple specific warnings:
-unused_variable = "something"  # noqa: F841, E501
+# Post Model Definition
+class Post(Base):
+    __tablename__ = "posts"
 
-# For an entire file (add at the top):
-# ruff: noqa: E501, F841
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True, nullable=False)
+    content = Column(Text, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+  
+    # Define the relationship to user - the 'back_populates' creates a bidirectional relationship
+    author = relationship("User", back_populates="posts")
 ```
 
-<br>
+**Usage in Router:**
 
----
-
-# 🚀 Docker and Docker Compose: Overview & Standard workflow
-
-### 🔹 What is Docker?
-
-> [!NOTE]
-> Docker is a platform that helps developers create, deploy, and run applications in isolated environments called containers. <br> Containers bundle everything an application needs, ensuring it works the same way across different systems.
-
-### 🔹 Why Use Docker?
-
-✅ Portability: Runs the same way in any environment. <br>
-✅ Scalability: Easy to scale applications. <br>
-✅ Efficiency: Uses fewer resources than traditional VMs. <br>
-✅ Isolation: Prevents conflicts between applications. <br>
-
-### 📦 Simplifying Dependencies with Containers
-
-> [!NOTE]
-> Containers package all required dependencies, eliminating the need for local installations.
-> For example, instead of manually installing and configuring a database on your local machine,
-> you can run it inside a container, ensuring a consistent and hassle-free setup.
-
-### 🔹 What is Docker Compose?
-
-> [!NOTE]
-> Docker Compose is a tool that allows you to manage multi-container applications.
-> Instead of running separate docker run commands, you can define everything in a docker-compose.yml file
-> and start all services with a single command.
-
-### 🔹 Why Use Docker Compose?
-
-✅ Simplifies multi-container setup. <br>
-✅ Allows defining environments in a single file. <br>
-✅ Supports easy service scaling. <br>
-✅ Reduces manual setup effort. <br>
-
-<br>
-
----
-
-# 📌 Standard Workflow with Docker Compose
-
-## 🏗️ Step-by-Step Guide
-
-### 1️⃣ Install Docker and Docker Compose
-
-Ensure you have Docker and Docker Compose installed. You can verify their installation with:
-
-```bash
-docker --version
-docker compose --version
-```
-
-<br>
-
-### 2️⃣ Build and Start Services
-
-Run the following command to build images (if needed) and start the services:
-
-```bash
-docker compose up --build
-```
-
-After application build and start it will be available by this url http://localhost:5001/
-
-<br>
-
-### 3️⃣ Stop Services
-
-When you're done, shut everything down (in the same terminal where everything was started):
-
-```bash
-CTRL+C command
-```
-
-Or run this command in a separate terminal window to stop and remove containers:
-
-```bash
-docker compose down
-```
-
-<br>
-
----
-
-# 📌 Alembic: Database Migrations Guide
-
-### 🔹 What is Alembic?
-
-> Alembic is a database migration tool for SQLAlchemy.
-> It helps track schema changes and apply them across different environments.
-
-<br>
-
-## 📌 Standard Alembic Workflow For Local Usage
-
-### 🔹 Automatically Detect And Apply Schema Changes
-
-Configure variables in your `.env` file like this:
-
-```
-MAKE_MIGRATIONS=true
-MAKE_MIGRATION_DOWNGRADE=false
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-Migrations will be enabled for the project, and on the startup, they will be automatically created and applied to the database:
-
-```
-docker compose up --build
-```
-
-✅ Alembic inspects SQLAlchemy models and generates migration code(script) automatically.
-
-> [!TIP]
-> It is obligatory to import our models so alembic will see them <br>
-> You can check a guide in `app/models/__init__.py` file
-
-> [!IMPORTANT]
-> We should keep track of all migration scripts so we will be able to upgrade or downgrade correctly our production database <br>
->
-> For instance, during the implementation of a feature, we created five additional migration files as part of local testing. <br>
-> However, to deploy the changes to production, it would be better to delete these five latest migration files
-> and create a new, single migration that consolidates the changes from all of them.
-> This ensures a cleaner, more efficient migration process for production.
-
-<br>
-
-### 🔹 Downgrade Version After Development of Feature
-
-Let's Assume that we created some number of migrations during implementation of feature and `63017c98c3da` is the migration from which we started adding changes
-
-Configure variables in your `.env` file like this:
-
-```
-MAKE_MIGRATIONS=false
-MAKE_MIGRATION_DOWNGRADE=true
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-Run command to start a project:
-
-```
-docker compose up --build
-```
-
-Then delete all new migration files that were created during implementation and change `.env` to making migrations again:
-
-```
-MAKE_MIGRATIONS=true
-MAKE_MIGRATION_DOWNGRADE=false
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-Run command to start a project:
-
-```
-docker compose up --build
-```
-
-✅ Now you have one migration script that includes all the changes for implemented feature <br>
-This way you will have clean history of migrations
-
-<br>
-
-### 🔹 Manual Migrations Generation
-
-To be able to run migrations command change `POSTGRES_HOST` in `.env` file and start database:
-
-```
-POSTGRES_HOST=localhost
-```
-
-We need to do this because we want to access database from outside of the container
-
-To start database separately use following command:
-
-```
-docker compose up db
-```
-
-Commands to migrate and apply database migrations:
-
-```
-alembic revision --autogenerate -m "your name of migration"
-alembic upgrade head
-```
-
-<br>
-
----
-
-# That is all you need to have for fully configured project 🎉
-
-## 📌 Below you can find useful commands that may come in handy during development
-
-<br>
-
----
-
-# 🚀 Useful Docker and Docker Compose Commands
-
-## 📌 Docker Commands
-
-### 🏗️ Container Management
-
-- List all running containers
-
-  ```
-  docker ps
-  ```
-
-  _Shows currently running containers._
-- List all containers (including stopped ones)
-
-  ```
-  docker ps -a
-  ```
-
-  _Shows all containers, including those that are stopped._
-- Start a container
-
-  ```
-  docker start <container_id>
-  ```
-
-  _Starts a stopped container._
-- Stop a container
-
-  ```
-  docker stop <container_id>
-  ```
-
-  _Stops a running container._
-- Restart a container
-
-  ```
-  docker restart <container_id>
-  ```
-
-  _Restarts a container._
-- Remove a container
-
-  ```
-  docker rm <container_id>
-  ```
-
-  _Deletes a stopped container._
-- Remove all stopped containers
-
-  ```
-  docker container prune
-  ```
-
-  _Deletes all containers that are not running._
-
-### 🏗️ Image Management
-
-- List all images
-
-  ```
-  docker images
-  ```
-
-  _Displays all Docker images stored locally._
-- Remove an image
-
-  ```
-  docker rmi <image_id>
-  ```
-
-  _Deletes a specific Docker image._
-- Remove all unused images
-
-  ```
-  docker image prune -a
-  ```
-
-  _Deletes all dangling and unused images._
-
-### 🏗️ Building and Running Containers
-
-- Build an image from a Dockerfile
-
-  ```
-  docker build -t <image_name> .
-  ```
-
-  _Builds an image from the Dockerfile in the current directory._
-- Run a container from an image
-
-  ```
-  docker run -d -p 80:80 --name <container_name> <image_name>
-  ```
-
-  _Runs a container in detached mode, mapping port 80 of the container to port 80 on the host._
-- Run an interactive container
-
-  ```
-  docker run -it <image_name> /bin/bash
-  ```
-
-  _Starts a container and opens an interactive bash shell._
-
-### 📂 Volumes and Logs
-
-- List all volumes
-
-  ```
-  docker volume ls
-  ```
-
-  _Displays all Docker volumes._
-- Remove unused volumes
-
-  ```
-  docker volume prune
-  ```
-
-  _Deletes all unused volumes._
-- View logs of a container
-
-  ```
-  docker logs <container_id>
-  ```
-
-  _Displays logs for a specific container._
-- Follow logs in real-time
-
-  ```
-  docker logs -f <container_id>
-  ```
-
-  _Streams logs from a container._
-
-### 🏗️ Network Management
-
-- List networks
-
-  ```
-  docker network ls
-  ```
-
-  _Displays all Docker networks._
-- Create a new network
-
-  ```
-  docker network create <network_name>
-  ```
-
-  _Creates a new Docker network._
-- Connect a container to a network
-
-  ```
-  docker network connect <network_name> <container_name>
-  ```
-
-  _Attaches a container to a specific network._
-
-## 📌 Useful Docker Compose Commands
-
-### 🏗️ Managing Services
-
-- Start services defined in docker-compose.yml
-
-  ```
-  docker compose up -d
-  ```
-
-  _Starts all services in detached mode._
-- Stop services
-
-  ```
-  docker compose down
-  ```
-
-  _Stops and removes all running services._
-- Restart services
-
-  ```
-  docker compose restart
-  ```
-
-  _Restarts all running services._
-- Rebuild services (force re-build of images)
-
-  ```
-  docker compose up --build
-  ```
-
-  _Rebuilds services and runs them._
-
-### 🏗️ Service Management
-
-- List all running services
-
-  ```
-  docker-compose ps
-  ```
-
-  _Shows all running services._
-- View logs for a service
-
-  ```
-  docker compose logs -f <service_name>
-  ```
-
-  _Streams logs from a specific service._
-- Run a command inside a running service
-
-  ```
-  docker compose exec <service_name> <command>
-  ```
-
-  _Runs a command inside a running container (e.g., /bin/bash)._
-
-### 📂 Volumes and Cleanup
-
-- Remove all stopped services and volumes
-
-  ```
-  docker compose down -v
-  ```
-
-  _Stops and removes all containers, networks, and volumes._
-- Prune unused resources
-
-  ```
-  docker system prune -a
-  ```
-
-  _Removes all unused containers, images, networks, and caches._
-
-<br>
-
-# 📌 Useful Alembic commands
-
-### 🔹 Create a New Migration <br>
-
-```
-alembic revision -m "add users table"
-```
-
-✅ This generates a new migration script in alembic/versions/.
-
-💡 But it does not create a migration code, so we should manually add it in a created template
-
-<br>
-
-### 🔹 Automatically Detect Schema Changes
-
-```
-alembic revision --autogenerate -m "auto detect changes"
-```
-
-✅ Alembic inspects SQLAlchemy models and generates migration code automatically.
-
-💡 Ensure models are imported in env.py for autogeneration to work!
-
-<br>
-
-### 🔹 Apply Migrations to the Database
-
-```
-alembic upgrade head
-```
-
-✅ This applies all pending migrations up to the latest version.
-
-Use `alembic upgrade <version_id>` to apply migrations up to a specific point.
-
-<br>
-
-### 🔹 Revert to a Previous State (Downgrade)
-
-```
-alembic downgrade -1
-```
-
-✅ This rolls back the last migration.
-
-Use `alembic downgrade <version_id>` to revert to a specific version.
-
-<br>
-
-## 📌 Managing Migration History
-
-### 🔹 View Current Migration State
-
-```
-alembic current
-```
-
-✅ Displays the currently applied migration version.
-
-<br>
-
-### 🔹 Check History of Migrations
-
-```
-alembic history
-```
-
-✅ Lists all past migrations in order.
-
-<br>
-
-### 🔹 Show Pending Migrations
-
-```
-alembic heads
-```
-
-✅ Displays the latest (unapplied) migration version(s).
-
-<br>
-
-### 🔹 Manually Stamp Database with a Version
-
-```
-alembic stamp head
-```
-
-✅ Marks the database as up-to-date without applying migrations.
-
-<br>
-
-## 📌 Common Debugging Commands
-
-### 🔹 Verify Your Migration Script
-
-```
-alembic check
-```
-
-✅ Checks for issues in migration scripts before applying them.
-
-<br>
-
-### 🔹 Generate SQL Instead of Applying Migration
-
-```
-alembic upgrade head --sql
-```
-
-✅ Shows SQL statements without running them, useful for debugging.
-
-<br>
-
-# Complete Migration Reset Process for Local Development
-
-Here's a step-by-step guide to reset your migrations while preserving your database structure:
-
-## 1. Configure Database Connection
-
-First, ensure your database is running and your connection settings are configured:
-
-```bash
-# In your .env file
-POSTGRES_HOST=localhost  # Change to localhost if using direct connection
-POSTGRES_PORT=5432
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_DB=fastapi
-```
-
-## 2. Start the Database
-
-Make sure your database is running:
-
-```bash
-# Start just the database container
-docker compose up db
-```
-
-## 3. Verify Database Connection
-
-Test your connection to ensure everything is working:
-
-```bash
-# Test connection using psql
-psql -U postgres -h localhost -d fastapi -c "SELECT 'Connection successful';"
-```
-
-## 4. Create a Backup (Optional but Recommended)
-
-Before making changes, back up your existing migrations and database:
-
-```bash
-# Backup migrations
-mkdir -p alembic/versions_backup
-cp -r alembic/versions/* alembic/versions_backup/
-
-# Backup database (optional)
-pg_dump -U postgres -h localhost -d fastapi > db_backup.sql
-```
-
-## 5. Reset Alembic Version Tracking
-
-Remove migration tracking from the database:
-
-```bash
-# Reset Alembic migration state
-alembic stamp base
-```
-
-## 6. Verify Reset
-
-Check that the version tracking has been reset:
-
-```bash
-# Should show no current revision
-alembic current
-```
-
-## 7. Remove Migration Files
-
-Now you can safely delete the migration files:
-
-```bash
-# Remove all migrations
-rm -rf alembic/versions/*.py
-```
-
-## 8. Create a Fresh Migration
-
-Generate a new migration that captures the current state of your database:
-
-```bash
-# Create new migration capturing current schema
-alembic revision --autogenerate -m "fresh_start"
-```
-
-## 9. Mark the Migration as Applied
-
-Tell Alembic that this new migration has already been applied:
-
-```bash
-# Mark as applied
-alembic stamp head
-```
-
-## 10. Verify Success
-
-Confirm everything worked correctly:
-
-```bash
-# Should show your new migration id
-alembic current
-
-# Check migration history - should just show your new migration
-alembic history
-```
-
-> [!NOTE]
-> This approach is perfect for local development as it gives you a clean migration history while preserving your database structure and data. It's especially useful when you've accumulated many incremental migrations during development that you don't need to preserve for production.
-
-### 🔹 Python 3.12
-
-### 🔹 Docker and docker compose
-
-<br>
-
-# 🚀 Python Project Setup Workflow
-
-## 🏗️ Step-by-Step Guide
-
-### 1️⃣ Set Up Virtual Environment
-
-```
-python3 -m venv .venv      # Creates the virtual environment
-source .venv/bin/activate  # Activate the virtual environment (Linux/macOS)
-.venv\Scripts\activate     # Activate the virtual environment (Windows)
-```
-
-<br>
-
-### 2️⃣ Install Dependencies
-
-We use `uv` for faster dependency management. Install it first:
-
-```bash
-# Install uv
-pip install uv
-```
-
-Run this command to install packages and dependencies:
-
-```bash
-# Install all dependencies including dev tools
-uv sync --all-extras
-```
-
-If you installed additional packages, add them to pyproject.toml:
-
-```bash
-# Add a runtime dependency
-uv pip add package_name --sync
-
-# Add a development dependency
-uv pip add package_name --sync --dev
-```
-
-> [!TIP]
-> This way we ensure tracking of all packages in pyproject.toml with proper versioning
-
-<br>
-
-### 3️⃣ Set Up Linters and Pre-commit Hooks
-
-This command will make linters run before each commit and help you to refactor code and keep everything clean:
-
-```bash
-pre-commit install
-```
-
-> [!TIP]
-> Run it only once and all needed dependencies will be installed
-
-<br>
-
-This command will help you when you want to run linters, but do not want to create a commit:
-
-```bash
-pre-commit run --all-files
-```
-
-> [!TIP]
-> Can be run multiple times to ensure code quality
-
-<br>
-
-### 4️⃣ Create .env file
-
-Example content of file for a successful build and start
-
-```
-DATABASE_PORT=5432
-POSTGRES_PASSWORD=password
-POSTGRES_USER=postgres
-POSTGRES_DB=fastapi
-POSTGRES_HOST=db
-
-REDIS_PASSWORD=password
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-MAKE_MIGRATIONS=false
-MAKE_MIGRATION_DOWNGRADE=false
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-<br>
-
----
-
-# 🚀 Docker and Docker Compose: Overview & Standard workflow
-
-### 🔹 What is Docker?
-
-> [!NOTE]
-> Docker is a platform that helps developers create, deploy, and run applications in isolated environments called containers. <br> Containers bundle everything an application needs, ensuring it works the same way across different systems.
-
-### 🔹 Why Use Docker?
-
-✅ Portability: Runs the same way in any environment. <br>
-✅ Scalability: Easy to scale applications. <br>
-✅ Efficiency: Uses fewer resources than traditional VMs. <br>
-✅ Isolation: Prevents conflicts between applications. <br>
-
-### 📦 Simplifying Dependencies with Containers
-
-> [!NOTE]
-> Containers package all required dependencies, eliminating the need for local installations.
-> For example, instead of manually installing and configuring a database on your local machine,
-> you can run it inside a container, ensuring a consistent and hassle-free setup.
-
-### 🔹 What is Docker Compose?
-
-> [!NOTE]
-> Docker Compose is a tool that allows you to manage multi-container applications.
-> Instead of running separate docker run commands, you can define everything in a docker-compose.yml file
-> and start all services with a single command.
-
-### 🔹 Why Use Docker Compose?
-
-✅ Simplifies multi-container setup. <br>
-✅ Allows defining environments in a single file. <br>
-✅ Supports easy service scaling. <br>
-✅ Reduces manual setup effort. <br>
-
-<br>
-
----
-
-# 📌 Standard Workflow with Docker Compose
-
-## 🏗️ Step-by-Step Guide
-
-### 1️⃣ Install Docker and Docker Compose
-
-Ensure you have Docker and Docker Compose installed. You can verify their installation with:
-
-docker --version
-docker compose --version
-<br>
-
-### 2️⃣ Build and Start Services Run
-
-The following command to build images (if needed) and start the services:
-
-docker compose up --build
-After application build and start it will be available by this url http://localhost:5001/
-
-<br>
-
-### 3️⃣ Stop Services
-
-When you're done, shut everything down (in the same terminal where everything was started):
-
-CTRL+C command
-Or run this command in a separate terminal window to stop and remove containers:
-
-docker compose down
-<br>
-
----
-
-# 📌 Alembic: Database Migrations Guide
-
-### 🔹 What is Alembic?
-
-> Alembic is a database migration tool for SQLAlchemy.
-> It helps track schema changes and apply them across different environments.
-
-<br>
-
-## 📌 Standard Alembic Workflow For Local Usage
-
-### 🔹 Automatically Detect And Apply Schema Changes
-
-Configure variables in your ``.env`` file like this
-
-```
-MAKE_MIGRATIONS=true
-MAKE_MIGRATION_DOWNGRADE=false
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-Migrations will be enabled for the project, and on the startup, they will be automatically created and applied to the database
-
-```
-docker compose up --build
-```
-
-✅ Alembic inspects SQLAlchemy models and generates migration code(script) automatically.
-
-> [!TIP]
-> It is obligatory to import our models so alembic will see them <br>
-> You can check a guide in ``app/models/__init__.py`` file
-
-> [!IMPORTANT]
-> We should keep track of all migration scripts so we will be able to upgrade or downgrade correctly our production database <br>
->
-> For instance, during the implementation of a feature, we created five additional migration files as part of local testing. <br>
-> However, to deploy the changes to production, it would be better to delete these five latest migration files
-> and create a new, single migration that consolidates the changes from all of them.
-> This ensures a cleaner, more efficient migration process for production.
-
-<br>
-
-### 🔹 Downgrade Version After Development of Feature
-
-Let's Assume that we created some number of migrations during implementation of feature and ``63017c98c3da`` is the migration from which we started adding changes
-
-Configure variables in your ``.env`` file like this
-
-```
-MAKE_MIGRATIONS=false
-MAKE_MIGRATION_DOWNGRADE=true
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-Run command to start a project
-
-```
-docker compose up --build
-```
-
-Then delete all new migration files that were created during implementation and change ``.env`` to making migrations again
-
-```
-MAKE_MIGRATIONS=true
-MAKE_MIGRATION_DOWNGRADE=false
-MIGRATION_DOWNGRADE_TARGET=63017c98c3da
-```
-
-Run command to start a project
-
-```
-docker compose up --build
-```
-
-✅ Now you have one migration script that includes all the changes for implemented feature <br>
-This way you will have clean history of migrations
-
-<br>
-
-### 🔹 Manual Migrations Generation
-
-To be able to run migrations command change ``POSTGRES_HOST`` in ``.env`` file and start database
-
-```
-POSTGRES_HOST=localhost
-```
-
-We need to do this because we want to access database from outside of the container
-
-To start database separately use following command
-
-```
-docker compose up db
-```
-
-Commands to migrate and apply database migrations
-
-```
-alembic revision --autogenerate -m "your name of migration"
-alembic upgrade head
-```
-
-<br>
-
----
-
-# That is all you need to have for fully configured project 🎉
-
-## 📌 Below you can find useful commands that may come in handy during development
-
-<br>
-
----
-
-# 🚀 Useful Docker and Docker Compose Commands
-
-## 📌 Docker Commands
-
-### 🏗️ Container Management
-
-- List all running containers
-
-  ```
-  docker ps
-  ```
-
-  _Shows currently running containers._
-- List all containers (including stopped ones)
-
-  ```
-  docker ps -a
-  ```
-
-  _Shows all containers, including those that are stopped._
-- Start a container
-
-  ```
-  docker start <container_id>
-  ```
-
-  _Starts a stopped container._
-- Stop a container
-
-  ```
-  docker stop <container_id>
-  ```
-
-  _Stops a running container._
-- Restart a container
-
-  ```
-  docker restart <container_id>
-  ```
-
-  _Restarts a container._
-- Remove a container
-
-  ```
-  docker rm <container_id>
-  ```
-
-  _Deletes a stopped container._
-- Remove all stopped containers
-
-  ```
-  docker container prune
-  ```
-
-  _Deletes all containers that are not running._
-
-### 🏗️ Image Management
-
-- List all images
-
-  ```
-  docker images
-  ```
-
-  _Displays all Docker images stored locally._
-- Remove an image
-
-  ```
-  docker rmi <image_id>
-  ```
-
-  _Deletes a specific Docker image._
-- Remove all unused images
-
-  ```
-  docker image prune -a
-  ```
-
-  _Deletes all dangling and unused images._
-
-### 🏗️ Building and Running Containers
-
-- Build an image from a Dockerfile
-
-  ```
-  docker build -t <image_name> .
-  ```
-
-  _Builds an image from the Dockerfile in the current directory._
-- Run a container from an image
-
-  ```
-  docker run -d -p 80:80 --name <container_name> <image_name>
-  ```
-
-  _Runs a container in detached mode, mapping port 80 of the container to port 80 on the host._
-- Run an interactive container
-
-  ```
-  docker run -it <image_name> /bin/bash
-  ```
-
-  _Starts a container and opens an interactive bash shell._
-
-### 📂 Volumes and Logs
-
-- List all volumes
-
-  ```
-  docker volume ls
-  ```
-
-  _Displays all Docker volumes._
-- Remove unused volumes
-
-  ```
-  docker volume prune
-  ```
-
-  _Deletes all unused volumes._
-- View logs of a container
-
-  ```
-  docker logs <container_id>
-  ```
-
-  _Displays logs for a specific container._
-- Follow logs in real-time
-
-  ```
-  docker logs -f <container_id>
-  ```
-
-  _Streams logs from a container._
-
-### 🏗️ Network Management
-
-- List networks
-
-  ```
-  docker network ls
-  ```
-
-  _Displays all Docker networks._
-- Create a new network
-
-  ```
-  docker network create <network_name>
-  ```
-
-  _Creates a new Docker network._
-- Connect a container to a network
-
-  ```
-  docker network connect <network_name> <container_name>
-  ```
-
-  _Attaches a container to a specific network._
-
-## 📌 Useful Docker Compose Commands
-
-### 🏗️ Managing Services
-
-- Start services defined in docker-compose.yml
-
-  ```
-  docker compose up -d
-  ```
-
-  _Starts all services in detached mode._
-- Stop services
-
-  ```
-  docker compose down
-  ```
-
-  _Stops and removes all running services._
-- Restart services
-
-  ```
-  docker compose restart
-  ```
-
-  _Restarts all running services._
-- Rebuild services (force re-build of images)
-
-  ```
-  docker compose up --build
-  ```
-
-  _Rebuilds services and runs them._
-
-### 🏗️ Service Management
-
-- List all running services
-
-  ```
-  docker-compose ps
-  ```
-
-  _Shows all running services._
-- View logs for a service
-
-  ```
-  docker compose logs -f <service_name>
-  ```
-
-  _Streams logs from a specific service._
-- Run a command inside a running service
-
-  ```
-  docker compose exec <service_name> <command>
-  ```
-
-  _Runs a command inside a running container (e.g., /bin/bash)._
-
-### 📂 Volumes and Cleanup
-
-- Remove all stopped services and volumes
-
-  ```
-  docker compose down -v
-  ```
-
-  _Stops and removes all containers, networks, and volumes._
-- Prune unused resources
-
-  ```
-  docker system prune -a
-  ```
-
-  _Removes all unused containers, images, networks, and caches._
-
-<br>
-
-# 📌 Useful Alembic commands
-
-### 🔹 Create a New Migration <br>
-
-```
-alembic revision -m "add users table"
-```
-
-✅ This generates a new migration script in alembic/versions/.
-
-💡 But it does not create a migration code, so we should manually add it in a created template
-
-<br>
-
-### 🔹 Automatically Detect Schema Changes
-
-```
-alembic revision --autogenerate -m "auto detect changes"
-```
-
-✅ Alembic inspects SQLAlchemy models and generates migration code automatically.
-
-💡 Ensure models are imported in env.py for autogeneration to work!
-
-<br>
-
-### 🔹 Apply Migrations to the Database
-
-```
-alembic upgrade head
-```
-
-✅ This applies all pending migrations up to the latest version.
-
-Use ``alembic upgrade <version_id>`` to apply migrations up to a specific point.
-
-<br>
-
-### 🔹 Revert to a Previous State (Downgrade)
-
-```
-alembic downgrade -1
-```
-
-✅ This rolls back the last migration.
-
-Use ``alembic downgrade <version_id>`` to revert to a specific version.
-
-<br>
-
-## 📌 Managing Migration History
-
-### 🔹 View Current Migration State
-
-```
-alembic current
-```
-
-✅ Displays the currently applied migration version.
-
-<br>
-
-### 🔹 Check History of Migrations
-
-```
-alembic history
-```
-
-✅ Lists all past migrations in order.
-
-<br>
-
-### 🔹 Show Pending Migrations
-
-```
-alembic heads
-```
-
-✅ Displays the latest (unapplied) migration version(s).
-
-<br>
-
-### 🔹 Manually Stamp Database with a Version
-
-```
-alembic stamp head
-```
-
-✅ Marks the database as up-to-date without applying migrations.
-
-<br>
-
-## 📌 Common Debugging Commands
-
-### 🔹 Verify Your Migration Script
-
-```
-alembic check
-```
-
-✅ Checks for issues in migration scripts before applying them.
-
-<br>
-
-### 🔹 Generate SQL Instead of Applying Migration
-
-```
-alembic upgrade head --sql
+```python
+@router.get("/users/{user_id}/posts", response_model=List[PostResponse])
+def get_user_posts(user_id: int, db: Session = Depends(get_db)):
+    """Get all posts for a specific user"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+  
+    # Access the posts through the relationship - SQLAlchemy automatically
+    # generates and executes the appropriate JOIN query
+    return user.posts
 ```
 
-✅ Shows SQL statements without running them, useful for debugging.
+**Key Points:**
 
-<br>
+- The foreign key (`user_id`) is placed in the "many" side (Posts table)
+- The `relationship()` function creates the Python attributes to navigate between objects
+- The `back_populates` parameter creates bidirectional navigation
+- The `ondelete="CASCADE"` ensures that when a user is deleted, all their posts are deleted too
 
-## 📌 Cleaning Up and Resetting Migrations
+#### One-to-One Relationships
 
-Here's a step-by-step guide to reset your migrations while preserving your database structure:
+**Description**: A one-to-one relationship exists when each record in table A is related to exactly one record in table B, and vice versa.
 
-## 1. Configure Database Connection
+Example: A user has exactly one profile, and each profile belongs to exactly one user.
 
-First, ensure your database is running and your connection settings are configured:
+**Database Table Structure:**
 
-```bash
-# In your .env file
-POSTGRES_HOST=localhost  # Change to localhost if using direct connection
-POSTGRES_PORT=5432
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_DB=fastapi
-```
-
-## 2. Start the Database
-
-Make sure your database is running:
-
-```bash
-# Start just the database container
-docker compose up db
-```
-
-## 3. Verify Database Connection
-
-Test your connection to ensure everything is working:
-
-```bash
-# Test connection using psql
-psql -U postgres -h localhost -d fastapi -c "SELECT 'Connection successful';"
-```
-
-## 4. Create a Backup (Optional but Recommended)
+**Users Table:**
 
-Before making changes, back up your existing migrations and database:
 
-```bash
-# Backup migrations
-mkdir -p alembic/versions_backup
-cp -r alembic/versions/* alembic/versions_backup/
-
-# Backup database (optional)
-pg_dump -U postgres -h localhost -d fastapi > db_backup.sql
-```
+| id | username | email     |
+| -- | -------- | --------- |
+| 1  | john     | j@ex.com  |
+| 2  | jane     | ja@ex.com |
 
-## 5. Reset Alembic Version Tracking
+**Profiles Table:**
 
-Remove migration tracking from the database:
 
-```bash
-# Reset Alembic migration state
-alembic stamp base
-```
+| id | bio  | location  | user_id (UNIQUE) |
+| -- | ---- | --------- | ---------------- |
+| 1  | Bio1 | Location1 | 1                |
+| 2  | Bio2 | Location2 | 2                |
 
-## 6. Verify Reset
+**Python Model Definition:**
 
-Check that the version tracking has been reset:
+```python
+# Profile Model Definition
+class Profile(Base):
+    __tablename__ = "profiles"
 
-```bash
-# Should show no current revision
-alembic current
+    id = Column(Integer, primary_key=True, index=True)
+    bio = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    # The unique=True constraint ensures one-to-one relationship
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+  
+    # One-to-One: One profile belongs to one user
+    # The uselist=False parameter ensures a scalar (not a list) is returned
+    user = relationship("User", backref="profile", uselist=False)
 ```
-
-## 7. Remove Migration Files
 
-Now you can safely delete the migration files:
+**Usage in Router:**
 
-```bash
-# Remove all migrations
-rm -rf alembic/versions/*.py
+```python
+@router.get("/users/{user_id}/profile", response_model=ProfileResponse)
+def get_user_profile(user_id: int, db: Session = Depends(get_db)):
+    """Get the profile for a specific user"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+  
+    if not hasattr(user, 'profile') or user.profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found for this user")
+  
+    # Access the profile through the relationship - returns a single object, not a list
+    return user.profile
+```
+
+**Key Points:**
+
+- The `unique=True` constraint on `user_id` enforces that each user can have only one profile
+- The `uselist=False` parameter ensures the relationship returns a single object, not a list
+- We use `backref` instead of `back_populates` here, which is a shortcut to create a bidirectional relationship
+
+#### Many-to-Many Relationships
+
+**Description**: A many-to-many relationship exists when multiple records in table A can be associated with multiple records in table B.
+
+Example: A post can have multiple categories, and a category can include multiple posts.
+
+**Database Table Structure:**
+
+**Posts Table:**
+
+
+| id | title | content  |
+| -- | ----- | -------- |
+| 1  | Post1 | Content1 |
+| 2  | Post2 | Content2 |
+| 3  | Post3 | Content3 |
+
+**Categories Table:**
+
+
+| id | name | description |
+| -- | ---- | ----------- |
+| 1  | Tech | Tech posts  |
+| 2  | Food | Food posts  |
+| 3  | News | News posts  |
+
+**PostCategories Table (Association/Junction Table):**
+
+
+| post_id | category_id |
+| ------- | ----------- |
+| 1       | 1           |
+| 1       | 3           |
+| 2       | 2           |
+| 3       | 1           |
+
+**Python Model Definition (Association Table Approach):**
+
+```python
+# Association Table Definition - this is a simple table, not a full model class
+post_categories = Table(
+    "post_categories",
+    Base.metadata,
+    Column("post_id", Integer, ForeignKey("posts.id"), primary_key=True),
+    Column("category_id", Integer, ForeignKey("categories.id"), primary_key=True)
+)
+
+# Post Model
+class Post(Base):
+    # ... other fields ...
+  
+    # Many-to-Many: Posts can have many categories
+    # The 'secondary' parameter refers to the association table
+    categories = relationship("Category", secondary=post_categories, back_populates="posts")
+
+# Category Model
+class Category(Base):
+    # ... other fields ...
+  
+    # Many-to-Many: Categories can have many posts
+    posts = relationship("Post", secondary=post_categories, back_populates="categories")
+```
+
+**Python Model Definition (Association Class Approach):**
+
+```python
+# Association Class Definition - a full model with its own properties
+class PostCategory(Base):
+    __tablename__ = "post_categories"
+  
+    post_id = Column(Integer, ForeignKey("posts.id"), primary_key=True)
+    category_id = Column(Integer, ForeignKey("categories.id"), primary_key=True)
+    # We can add additional fields to the association, like created_at
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+  
+    # Navigation properties to both sides of the relationship
+    post = relationship("Post", back_populates="post_categories")
+    category = relationship("Category", back_populates="post_categories")
+
+# Post Model
+class Post(Base):
+    # ... other fields ...
+  
+    # Direct access to the association objects
+    post_categories = relationship("PostCategory", back_populates="post", cascade="all, delete-orphan")
+    # Convenient access to the categories themselves (viewonly to prevent duplicate updates)
+    categories = relationship("Category", secondary="post_categories", viewonly=True)
+
+# Category Model
+class Category(Base):
+    # ... other fields ...
+  
+    # Direct access to the association objects
+    post_categories = relationship("PostCategory", back_populates="category", cascade="all, delete-orphan")
+    # Convenient access to the posts themselves (viewonly to prevent duplicate updates)
+    posts = relationship("Post", secondary="post_categories", viewonly=True)
+```
+
+**Usage in Router:**
+
+```python
+@router.post("/{post_id}/categories/{category_id}", response_model=PostResponse)
+def add_category_to_post(post_id: int, category_id: int, db: Session = Depends(get_db)):
+    """Add a category to a post"""
+    # Check if post exists
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+  
+    # Check if category exists
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+  
+    # Using association class approach - create the relationship record directly
+    existing = db.query(PostCategory).filter(
+        PostCategory.post_id == post_id,
+        PostCategory.category_id == category_id
+    ).first()
+  
+    if not existing:
+        # Create the association
+        post_category = PostCategory(post_id=post_id, category_id=category_id)
+        db.add(post_category)
+        db.commit()
+  
+    return post
 ```
 
-## 8. Create a Fresh Migration
+**Key Points:**
+
+- Many-to-many relationships require an association/junction table containing foreign keys to both related tables
+- The simple Table approach is sufficient when the relationship has no additional attributes
+- The association class approach allows storing additional data about the relationship (like when it was created)
+- The `viewonly=True` parameter prevents SQLAlchemy from trying to update the relationship from both sides, avoiding conflicts
 
-Generate a new migration that captures the current state of your database:
+#### Self-Referential Relationships
 
-```bash
-# Create new migration capturing current schema
-alembic revision --autogenerate -m "fresh_start"
-```
+**Description**: A self-referential relationship connects records within the same table.
 
-## 9. Mark the Migration as Applied
+Example: Comments can have replies, which are also comments.
 
-Tell Alembic that this new migration has already been applied:
+**Comments Table:**
 
-```bash
-# Mark as applied
-alembic stamp head
-```
 
-## 10. Verify Success
+| id | content  | post_id | user_id | parent_id |
+| -- | -------- | ------- | ------- | --------- |
+| 1  | Comment1 | 1       | 1       | NULL      |
+| 2  | Reply1   | 1       | 2       | 1         |
+| 3  | Reply2   | 1       | 1       | 1         |
+| 4  | Comment2 | 2       | 2       | NULL      |
 
-Confirm everything worked correctly:
+**Python Model Definition:**
 
-```bash
-# Should show your new migration id
-alembic current
+```python
+class Comment(Base):
+    __tablename__ = "comments"
 
-# Check migration history - should just show your new migration
-alembic history
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(Text, nullable=False)
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # A comment can refer to another comment as its parent
+    parent_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
+  
+    # Self-referential relationship: Comments can have replies
+    # This creates a virtual 'replies' attribute containing child comments
+    replies = relationship("Comment", back_populates="parent", cascade="all, delete-orphan")
+    # The remote_side parameter is crucial - it indicates which side is the "one" in the relationship
+    parent = relationship("Comment", back_populates="replies", remote_side=[id])
 ```
-
-> [!NOTE]
-> This approach is perfect for local development as it gives you a clean migration history while preserving your database structure and data. It's especially useful when you've accumulated many incremental migrations during development that you don't need to preserve for production.
 
-<br>
+**Usage in Router:**
+
+```python
+@router.get("/{comment_id}/replies", response_model=List[CommentResponse])
+def get_comment_replies(comment_id: int, db: Session = Depends(get_db)):
+    """Get all replies for a specific comment"""
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+  
+    # Access the replies through the relationship
+    return comment.replies
+```
+
+**Key Points:**
+
+- The `parent_id` column refers back to the same table's `id` column
+- The `remote_side=[id]` parameter is essential in self-referential relationships to specify which side is the "parent"
+- Without `remote_side`, SQLAlchemy wouldn't know which side of the relationship is the "one" and which is the "many"
+
+## SQLAlchemy's Loading Strategies
+
+**Description**: SQLAlchemy provides different strategies for loading related data, allowing optimization based on specific use cases.
+
+### 1. Lazy Loading
+
+By default, relationships are lazy-loaded, meaning they're only loaded when accessed:
+
+```python
+# The posts aren't loaded until we access the attribute
+user = db.query(User).filter(User.id == user_id).first()
+posts = user.posts  # Database query happens here when we access 'posts'
+```
+
+**Key Points:**
+
+- Simple to use but can lead to the N+1 query problem if not careful
+- Good for cases where you might not need the related data
+- Can be inefficient if you always need the related data
+
+### 2. Eager Loading with joinedload
+
+For better performance, we can eager-load relationships to avoid the N+1 query problem:
+
+```python
+# Posts are loaded in the same query as the user
+user = db.query(User).options(
+    joinedload(User.posts)
+).filter(User.id == user_id).first()
+posts = user.posts  # No additional query needed - data already loaded
+```
+
+**Key Points:**
+
+- Loads related data in a single query using JOINs
+- Prevents the N+1 query problem
+- Useful when you know you'll need the related data
+- Can retrieve unnecessary data if you don't always need the relationships
+
+### 3. Explicit Joins for Filtering
+
+When we need to filter based on related data:
+
+```python
+# Find users who have posts in a specific category
+users = db.query(User).join(User.posts).join(Post.categories).filter(
+    Category.id == category_id
+).distinct().all()
+```
+
+**Key Points:**
+
+- Uses JOINs explicitly for filtering
+- Different from `joinedload` which is for eager loading
+- Necessary when you need to filter results based on related tables
+- The `distinct()` call ensures we get each user only once, even if they have multiple matching posts
+
+## Project Structure and Development Flow
+
+### Project Structure
+
+A well-organized FastAPI application with SQLAlchemy typically follows this structure:
+
+```
+app/
+├── __init__.py
+├── main.py                 # FastAPI application entry point
+├── config.py               # Configuration settings
+├── database.py             # Database connection setup
+├── models/                 # SQLAlchemy ORM models
+│   ├── __init__.py
+│   ├── user.py
+│   ├── post.py
+│   ├── comment.py
+│   ├── category.py
+│   ├── role.py
+│   └── profile.py
+├── schemas/                # Pydantic models for request/response
+│   ├── __init__.py
+│   ├── user.py
+│   ├── post.py
+│   ├── comment.py
+│   ├── category.py
+│   ├── role.py
+│   └── profile.py
+├── routers/                # API route handlers
+│   ├── __init__.py
+│   ├── users.py
+│   ├── posts.py
+│   ├── comments.py
+│   ├── categories.py
+│   ├── roles.py
+│   └── profiles.py
+└── dependencies/           # Shared dependencies for routes
+    └── __init__.py
+```
+
+### Development Flow
+
+The recommended development flow for a project using SQLAlchemy relationships:
+
+1. **Define the Database Models**:
+
+   - Start by designing your database schema
+   - Identify the entities and their relationships
+   - Implement SQLAlchemy models with proper relationship definitions
+   - Register all models in `models/__init__.py` for Alembic migrations
+2. **Create Pydantic Schemas**:
+
+   - Define base schemas for common attributes
+   - Create request schemas (for creating and updating resources)
+   - Create response schemas (for returning data to clients)
+   - Consider nested response schemas for returning related data
+3. **Implement API Routers**:
+
+   - Create router files for each main entity
+   - Implement CRUD operations (Create, Read, Update, Delete)
+   - Add endpoints for relationship management
+   - Use appropriate status codes and error handling
+4. **Register Routers in the Main Application**:
+
+   - Import all routers in `main.py`
+   - Include them in the FastAPI application with appropriate prefixes
+   - Set up middleware, exception handlers, and other application-wide settings
+5. **Testing**:
+
+   - Write unit tests for individual components
+   - Create integration tests to verify relationship behavior
+   - Test API endpoints using tools like pytest and TestClient
+
+### Best Practices for Working with Relationships
+
+1. **Choose the Right Relationship Type**:
+
+   - Use one-to-many for most parent-child relationships
+   - Use one-to-one for extension data that has a 1:1 correspondence
+   - Use many-to-many for connections between entities where both can have multiple relationships
+   - Use self-referential relationships for hierarchical data
+2. **Consider Loading Strategies**:
+
+   - Use eager loading (`joinedload`) when you know you'll need related data
+   - Use explicit joins when filtering on related entities
+   - Be aware of the N+1 query problem and optimize accordingly
+3. **Handle Cascades Properly**:
+
+   - Set up appropriate cascade behaviors (e.g., `cascade="all, delete-orphan"`)
+   - Consider what should happen to related entities when a parent is deleted
+4. **Use Transactions for Complex Operations**:
+
+   - Wrap operations that affect multiple related entities in transactions
+   - Roll back on errors to maintain data consistency
+5. **Optimize for Performance**:
+
+   - Add indexes to foreign key columns
+   - Use pagination for endpoints that return many items
+   - Consider using compiled queries for frequently executed operations
+
+By following this structure and flow, you can build a well-organized FastAPI application that efficiently leverages SQLAlchemy's relationship capabilities, resulting in clean, maintainable code and optimal database interactions.

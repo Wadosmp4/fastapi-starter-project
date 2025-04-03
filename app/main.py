@@ -6,11 +6,29 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
 from app.config import LogConfig
+from app.routers import (
+    categories,
+    comments,
+    posts,
+    profiles,
+    relationships_demo,
+    roles,
+    users,
+)
 
 dictConfig(LogConfig().dict())
 logger = logging.getLogger("app")
 
 app = FastAPI()
+
+# Include routers
+app.include_router(relationships_demo.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
+app.include_router(posts.router, prefix="/api/v1")
+app.include_router(comments.router, prefix="/api/v1")
+app.include_router(categories.router, prefix="/api/v1")
+app.include_router(roles.router, prefix="/api/v1")
+app.include_router(profiles.router, prefix="/api/v1")
 
 
 @app.get("/")

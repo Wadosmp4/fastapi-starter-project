@@ -3,6 +3,11 @@
 # and changes applied to migration script
 
 from app.database import Base  # noqa: F401
+from app.models.category import Category  # noqa: F401
+from app.models.comment import Comment  # noqa: F401
+from app.models.post import Post, PostCategory  # noqa: F401
+from app.models.profile import Profile  # noqa: F401
+from app.models.role import Role, UserRole  # noqa: F401
 
-# example
-# from app.models.users import Users  # noqa: ERA001
+# Import all models
+from app.models.user import User  # noqa: F401
