@@ -1435,7 +1435,7 @@ alembic upgrade head --sql
 
 ## 📌 Cleaning Up and Resetting Migrations
 
- Here's a step-by-step guide to reset your migrations while preserving your database structure:
+Here's a step-by-step guide to reset your migrations while preserving your database structure:
 
 ## 1. Configure Database Connection
 
@@ -1540,16 +1540,5 @@ alembic history
 
 > [!NOTE]
 > This approach is perfect for local development as it gives you a clean migration history while preserving your database structure and data. It's especially useful when you've accumulated many incremental migrations during development that you don't need to preserve for production.
->
-
-### 🔹 Delete All Migrations and Reset
-
-```
-rm -rf alembic/versions/*
-alembic revision --autogenerate -m "reset migrations"
-alembic upgrade head
-```
-
-✅ Deletes old migrations and creates a fresh one based on the current models.
 
 <br>
