@@ -48,6 +48,3 @@ class ProfileResponse(ProfileBase):
 # Extended response model with user details
 class ProfileDetailResponse(ProfileResponse):
     user: UserInProfile | None = None
-
-    class Config:
-        from_attributes = True

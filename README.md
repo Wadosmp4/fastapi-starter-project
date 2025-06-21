@@ -50,7 +50,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-  
+
     # Define the relationship to posts
     # This creates a virtual 'posts' attribute that can be accessed like a list
     posts = relationship("Post", back_populates="author")
@@ -63,7 +63,7 @@ class Post(Base):
     title = Column(String, index=True, nullable=False)
     content = Column(Text, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-  
+
     # Define the relationship to user - the 'back_populates' creates a bidirectional relationship
     author = relationship("User", back_populates="posts")
 ```
@@ -77,7 +77,7 @@ def get_user_posts(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-  
+
     # Access the posts through the relationship - SQLAlchemy automatically
     # generates and executes the appropriate JOIN query
     return user.posts
@@ -126,7 +126,7 @@ class Profile(Base):
     location = Column(String, nullable=True)
     # The unique=True constraint ensures one-to-one relationship
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
-  
+
     # One-to-One: One profile belongs to one user
     # The uselist=False parameter ensures a scalar (not a list) is returned
     user = relationship("User", backref="profile", uselist=False)
@@ -141,10 +141,10 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-  
+
     if not hasattr(user, 'profile') or user.profile is None:
         raise HTTPException(status_code=404, detail="Profile not found for this user")
-  
+
     # Access the profile through the relationship - returns a single object, not a list
     return user.profile
 ```
@@ -205,7 +205,7 @@ post_categories = Table(
 # Post Model
 class Post(Base):
     # ... other fields ...
-  
+
     # Many-to-Many: Posts can have many categories
     # The 'secondary' parameter refers to the association table
     categories = relationship("Category", secondary=post_categories, back_populates="posts")
@@ -213,7 +213,7 @@ class Post(Base):
 # Category Model
 class Category(Base):
     # ... other fields ...
-  
+
     # Many-to-Many: Categories can have many posts
     posts = relationship("Post", secondary=post_categories, back_populates="categories")
 ```
@@ -224,12 +224,12 @@ class Category(Base):
 # Association Class Definition - a full model with its own properties
 class PostCategory(Base):
     __tablename__ = "post_categories"
-  
+
     post_id = Column(Integer, ForeignKey("posts.id"), primary_key=True)
     category_id = Column(Integer, ForeignKey("categories.id"), primary_key=True)
     # We can add additional fields to the association, like created_at
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-  
+
     # Navigation properties to both sides of the relationship
     post = relationship("Post", back_populates="post_categories")
     category = relationship("Category", back_populates="post_categories")
@@ -237,7 +237,7 @@ class PostCategory(Base):
 # Post Model
 class Post(Base):
     # ... other fields ...
-  
+
     # Direct access to the association objects
     post_categories = relationship("PostCategory", back_populates="post", cascade="all, delete-orphan")
     # Convenient access to the categories themselves (viewonly to prevent duplicate updates)
@@ -246,7 +246,7 @@ class Post(Base):
 # Category Model
 class Category(Base):
     # ... other fields ...
-  
+
     # Direct access to the association objects
     post_categories = relationship("PostCategory", back_populates="category", cascade="all, delete-orphan")
     # Convenient access to the posts themselves (viewonly to prevent duplicate updates)
@@ -263,24 +263,24 @@ def add_category_to_post(post_id: int, category_id: int, db: Session = Depends(g
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-  
+
     # Check if category exists
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-  
+
     # Using association class approach - create the relationship record directly
     existing = db.query(PostCategory).filter(
         PostCategory.post_id == post_id,
         PostCategory.category_id == category_id
     ).first()
-  
+
     if not existing:
         # Create the association
         post_category = PostCategory(post_id=post_id, category_id=category_id)
         db.add(post_category)
         db.commit()
-  
+
     return post
 ```
 
@@ -319,7 +319,7 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     # A comment can refer to another comment as its parent
     parent_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
-  
+
     # Self-referential relationship: Comments can have replies
     # This creates a virtual 'replies' attribute containing child comments
     replies = relationship("Comment", back_populates="parent", cascade="all, delete-orphan")
@@ -336,7 +336,7 @@ def get_comment_replies(comment_id: int, db: Session = Depends(get_db)):
     comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-  
+
     # Access the replies through the relationship
     return comment.replies
 ```

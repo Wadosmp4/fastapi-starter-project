@@ -1,15 +1,34 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-json
+      - id: pretty-format-json
+        args:
+          - '--autofix'
+          - '--indent=2'
+          - '--no-sort-keys'
+      - id: check-toml
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: name-tests-test
+        args: ['--pytest-test-first']
+        exclude: '^app/tests/fixtures/'
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'dev']
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.11.13
     hooks:
       - id: ruff
-        args: [ --fix ]
-        types: [python]  # Explicitly specify Python files
+        args: [--fix]
       - id: ruff-format
-        types: [python]  # Explicitly specify Python files
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.401
     hooks:
-      - id: mypy
-        files: ^(app|tests)/.*\.py$  # Check both app and tests directories
+      - id: pyright

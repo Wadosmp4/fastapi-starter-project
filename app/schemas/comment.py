@@ -57,6 +57,3 @@ class CommentResponse(CommentBase):
 class CommentDetailResponse(CommentResponse):
     author: UserInComment | None = None
     replies: list[ReplyResponse] = []
-
-    class Config:
-        from_attributes = True

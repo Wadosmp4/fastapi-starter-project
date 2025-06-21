@@ -11,10 +11,11 @@ from app.schemas.profile import (
     ProfileUpdate,
 )
 
-router = APIRouter(prefix="/profiles", tags=["Profiles"])
+
+router = APIRouter(prefix='/profiles', tags=['Profiles'])
 
 
-@router.post("/", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
+@router.post('/', response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
 def create_profile(profile: ProfileCreate, db: Session = Depends(get_db)):
     """Create a new profile"""
     # Check if user exists
@@ -22,7 +23,7 @@ def create_profile(profile: ProfileCreate, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail='User not found',
         )
 
     # Check if user already has a profile
@@ -30,7 +31,7 @@ def create_profile(profile: ProfileCreate, db: Session = Depends(get_db)):
     if existing_profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has a profile",
+            detail='User already has a profile',
         )
 
     # Create new profile
@@ -47,38 +48,38 @@ def create_profile(profile: ProfileCreate, db: Session = Depends(get_db)):
     return new_profile
 
 
-@router.get("/", response_model=list[ProfileResponse])
+@router.get('/', response_model=list[ProfileResponse])
 def get_profiles(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all profiles with pagination"""
     profiles = db.query(Profile).offset(skip).limit(limit).all()
     return profiles
 
 
-@router.get("/{profile_id}", response_model=ProfileDetailResponse)
+@router.get('/{profile_id}', response_model=ProfileDetailResponse)
 def get_profile(profile_id: int, db: Session = Depends(get_db)):
     """Get a specific profile by ID with user details"""
     profile = db.query(Profile).options(joinedload(Profile.user)).filter(Profile.id == profile_id).first()
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found",
+            detail='Profile not found',
         )
     return profile
 
 
-@router.get("/users/{user_id}", response_model=ProfileDetailResponse)
+@router.get('/users/{user_id}', response_model=ProfileDetailResponse)
 def get_profile_by_user(user_id: int, db: Session = Depends(get_db)):
     """Get a profile by user ID"""
     profile = db.query(Profile).options(joinedload(Profile.user)).filter(Profile.user_id == user_id).first()
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found for this user",
+            detail='Profile not found for this user',
         )
     return profile
 
 
-@router.put("/{profile_id}", response_model=ProfileResponse)
+@router.put('/{profile_id}', response_model=ProfileResponse)
 def update_profile(
     profile_id: int,
     profile_update: ProfileUpdate,
@@ -90,7 +91,7 @@ def update_profile(
     if not db_profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found",
+            detail='Profile not found',
         )
 
     # Update profile fields
@@ -103,7 +104,7 @@ def update_profile(
     return db_profile
 
 
-@router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{profile_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_profile(profile_id: int, db: Session = Depends(get_db)):
     """Delete a profile"""
     # Get the existing profile
@@ -111,7 +112,7 @@ def delete_profile(profile_id: int, db: Session = Depends(get_db)):
     if not db_profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found",
+            detail='Profile not found',
         )
 
     # Delete the profile

@@ -6,10 +6,11 @@ from app.models.post import Post, PostCategory
 from app.models.user import User
 from app.schemas.post import PostCreate, PostDetailResponse, PostResponse, PostUpdate
 
-router = APIRouter(prefix="/posts", tags=["Posts"])
+
+router = APIRouter(prefix='/posts', tags=['Posts'])
 
 
-@router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+@router.post('/', response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 def create_post(post: PostCreate, db: Session = Depends(get_db)):
     """Create a new post"""
     # Check if user exists
@@ -17,7 +18,7 @@ def create_post(post: PostCreate, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail='User not found',
         )
 
     # Create new post
@@ -28,7 +29,7 @@ def create_post(post: PostCreate, db: Session = Depends(get_db)):
     return new_post
 
 
-@router.get("/", response_model=list[PostResponse])
+@router.get('/', response_model=list[PostResponse])
 def get_posts(
     skip: int = 0,
     limit: int = 100,
@@ -45,7 +46,7 @@ def get_posts(
     return posts
 
 
-@router.get("/{post_id}", response_model=PostDetailResponse)
+@router.get('/{post_id}', response_model=PostDetailResponse)
 def get_post(post_id: int, db: Session = Depends(get_db)):
     """Get a specific post by ID with author details"""
     post = db.query(Post).options(joinedload(Post.author)).filter(Post.id == post_id).first()
@@ -53,20 +54,20 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found",
+            detail='Post not found',
         )
 
     # Format the response with author details
     result = PostDetailResponse.from_orm(post)
     result.author = {
-        "id": post.author.id,
-        "username": post.author.username,
+        'id': post.author.id,
+        'username': post.author.username,
     }
 
     return result
 
 
-@router.put("/{post_id}", response_model=PostResponse)
+@router.put('/{post_id}', response_model=PostResponse)
 def update_post(post_id: int, post_update: PostUpdate, db: Session = Depends(get_db)):
     """Update a post"""
     # Get the existing post
@@ -74,7 +75,7 @@ def update_post(post_id: int, post_update: PostUpdate, db: Session = Depends(get
     if not db_post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found",
+            detail='Post not found',
         )
 
     # Update post fields
@@ -87,7 +88,7 @@ def update_post(post_id: int, post_update: PostUpdate, db: Session = Depends(get
     return db_post
 
 
-@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{post_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(post_id: int, db: Session = Depends(get_db)):
     """Delete a post"""
     # Get the existing post
@@ -95,7 +96,7 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     if not db_post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found",
+            detail='Post not found',
         )
 
     # Delete the post
@@ -103,7 +104,7 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     db.commit()
 
 
-@router.post("/{post_id}/categories/{category_id}", response_model=PostResponse)
+@router.post('/{post_id}/categories/{category_id}', response_model=PostResponse)
 def add_category_to_post(post_id: int, category_id: int, db: Session = Depends(get_db)):
     """Add a category to a post"""
     # Check if post exists
@@ -111,7 +112,7 @@ def add_category_to_post(post_id: int, category_id: int, db: Session = Depends(g
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found",
+            detail='Post not found',
         )
 
     # Check if category exists
@@ -121,7 +122,7 @@ def add_category_to_post(post_id: int, category_id: int, db: Session = Depends(g
     if not category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Category not found",
+            detail='Category not found',
         )
 
     # Check if the relationship already exists
@@ -143,7 +144,7 @@ def add_category_to_post(post_id: int, category_id: int, db: Session = Depends(g
     return post
 
 
-@router.delete("/{post_id}/categories/{category_id}", response_model=PostResponse)
+@router.delete('/{post_id}/categories/{category_id}', response_model=PostResponse)
 def remove_category_from_post(
     post_id: int,
     category_id: int,
@@ -155,7 +156,7 @@ def remove_category_from_post(
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found",
+            detail='Post not found',
         )
 
     # Check if the relationship exists

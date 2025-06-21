@@ -8,10 +8,11 @@ from app.models.post import Post, PostCategory
 from app.models.profile import Profile
 from app.models.user import User
 
-router = APIRouter(prefix="/relationships-demo", tags=["Relationships Demo"])
+
+router = APIRouter(prefix='/relationships-demo', tags=['Relationships Demo'])
 
 
-@router.get("/one-to-many/")
+@router.get('/one-to-many/')
 def one_to_many_relationship(db: Session = Depends(get_db)):
     """Demonstrate one-to-many relationship: User -> Posts
 
@@ -23,9 +24,9 @@ def one_to_many_relationship(db: Session = Depends(get_db)):
     if not user:
         # Create a demo user if none exists
         user = User(
-            email="demo@example.com",
-            username="demouser",
-            hashed_password="hashed_password_demo",  # noqa: S106
+            email='demo@example.com',
+            username='demouser',
+            hashed_password='hashed_password_demo',  # noqa: S106
         )
         db.add(user)
         db.commit()
@@ -33,10 +34,10 @@ def one_to_many_relationship(db: Session = Depends(get_db)):
 
         # Create some posts for this user
         posts = [
-            Post(title="First Post", content="Content of first post", user_id=user.id),
+            Post(title='First Post', content='Content of first post', user_id=user.id),
             Post(
-                title="Second Post",
-                content="Content of second post",
+                title='Second Post',
+                content='Content of second post',
                 user_id=user.id,
             ),
         ]
@@ -48,24 +49,24 @@ def one_to_many_relationship(db: Session = Depends(get_db)):
 
     # Return the user and their posts
     return {
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
         },
-        "posts": [
+        'posts': [
             {
-                "id": post.id,
-                "title": post.title,
-                "content": post.content,
+                'id': post.id,
+                'title': post.title,
+                'content': post.content,
             }
             for post in user.posts
         ],
-        "relationship_type": "one-to-many",
+        'relationship_type': 'one-to-many',
     }
 
 
-@router.get("/many-to-one/")
+@router.get('/many-to-one/')
 def many_to_one_relationship(db: Session = Depends(get_db)):
     """Demonstrate many-to-one relationship: Posts -> User
 
@@ -76,27 +77,27 @@ def many_to_one_relationship(db: Session = Depends(get_db)):
 
     if not posts:
         # If no posts, return empty list
-        return {"posts": [], "relationship_type": "many-to-one"}
+        return {'posts': [], 'relationship_type': 'many-to-one'}
 
     # Return posts with their author
     return {
-        "posts": [
+        'posts': [
             {
-                "id": post.id,
-                "title": post.title,
-                "content": post.content,
-                "author": {
-                    "id": post.author.id,
-                    "username": post.author.username,
+                'id': post.id,
+                'title': post.title,
+                'content': post.content,
+                'author': {
+                    'id': post.author.id,
+                    'username': post.author.username,
                 },
             }
             for post in posts
         ],
-        "relationship_type": "many-to-one",
+        'relationship_type': 'many-to-one',
     }
 
 
-@router.get("/one-to-one/")
+@router.get('/one-to-one/')
 def one_to_one_relationship(db: Session = Depends(get_db)):
     """Demonstrate one-to-one relationship: User <-> Profile
 
@@ -107,18 +108,18 @@ def one_to_one_relationship(db: Session = Depends(get_db)):
 
     if not user:
         # Return empty response if no user found
-        return {"message": "No user found", "relationship_type": "one-to-one"}
+        return {'message': 'No user found', 'relationship_type': 'one-to-one'}
 
     # Check if user has a profile
-    if hasattr(user, "profile") and user.profile is not None:
+    if hasattr(user, 'profile') and user.profile is not None:
         profile = user.profile
     else:
         # Create a profile for the user
         profile = Profile(
             user_id=user.id,
-            bio="This is a demo profile",
-            website="https://example.com",
-            location="Demo City",
+            bio='This is a demo profile',
+            website='https://example.com',
+            location='Demo City',
         )
         db.add(profile)
         db.commit()
@@ -126,22 +127,22 @@ def one_to_one_relationship(db: Session = Depends(get_db)):
 
     # Return the user and their profile
     return {
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
         },
-        "profile": {
-            "id": profile.id,
-            "bio": profile.bio,
-            "website": profile.website,
-            "location": profile.location,
+        'profile': {
+            'id': profile.id,
+            'bio': profile.bio,
+            'website': profile.website,
+            'location': profile.location,
         },
-        "relationship_type": "one-to-one",
+        'relationship_type': 'one-to-one',
     }
 
 
-@router.get("/many-to-many/")
+@router.get('/many-to-many/')
 def many_to_many_relationship(db: Session = Depends(get_db)):
     """Demonstrate many-to-many relationship: Posts <-> Categories
 
@@ -154,9 +155,9 @@ def many_to_many_relationship(db: Session = Depends(get_db)):
     # Create categories if none exist
     if not categories:
         categories = [
-            Category(name="Technology", description="Tech related posts"),
-            Category(name="Travel", description="Travel related posts"),
-            Category(name="Food", description="Food and cooking posts"),
+            Category(name='Technology', description='Tech related posts'),
+            Category(name='Travel', description='Travel related posts'),
+            Category(name='Food', description='Food and cooking posts'),
         ]
         db.add_all(categories)
         db.commit()
@@ -165,7 +166,7 @@ def many_to_many_relationship(db: Session = Depends(get_db)):
 
     # Ensure we have posts
     if not posts:
-        return {"message": "No posts found", "relationship_type": "many-to-many"}
+        return {'message': 'No posts found', 'relationship_type': 'many-to-many'}
 
     # Add categories to posts if not already assigned
     for post in posts[:2]:  # Only use first two posts for demo
@@ -184,33 +185,33 @@ def many_to_many_relationship(db: Session = Depends(get_db)):
 
     # Return posts with their categories
     return {
-        "posts": [
+        'posts': [
             {
-                "id": post.id,
-                "title": post.title,
-                "categories": [
+                'id': post.id,
+                'title': post.title,
+                'categories': [
                     {
-                        "id": category.id,
-                        "name": category.name,
+                        'id': category.id,
+                        'name': category.name,
                     }
                     for category in post.categories
                 ],
             }
             for post in posts_with_categories
         ],
-        "categories": [
+        'categories': [
             {
-                "id": category.id,
-                "name": category.name,
-                "post_count": len(category.posts),
+                'id': category.id,
+                'name': category.name,
+                'post_count': len(category.posts),
             }
             for category in categories
         ],
-        "relationship_type": "many-to-many",
+        'relationship_type': 'many-to-many',
     }
 
 
-@router.get("/self-referential/")
+@router.get('/self-referential/')
 def self_referential_relationship(db: Session = Depends(get_db)):
     """Demonstrate self-referential relationship: Comment -> Comment
 
@@ -220,7 +221,7 @@ def self_referential_relationship(db: Session = Depends(get_db)):
     post = db.query(Post).first()
 
     if not post:
-        return {"message": "No posts found", "relationship_type": "self-referential"}
+        return {'message': 'No posts found', 'relationship_type': 'self-referential'}
 
     # Check if post has comments
     if not post.comments:
@@ -228,12 +229,12 @@ def self_referential_relationship(db: Session = Depends(get_db)):
         user = db.query(User).first()
         if not user:
             return {
-                "message": "No users found",
-                "relationship_type": "self-referential",
+                'message': 'No users found',
+                'relationship_type': 'self-referential',
             }
 
         parent_comment = Comment(
-            content="This is a parent comment",
+            content='This is a parent comment',
             user_id=user.id,
             post_id=post.id,
         )
@@ -244,13 +245,13 @@ def self_referential_relationship(db: Session = Depends(get_db)):
         # Create some replies to the parent comment
         replies = [
             Comment(
-                content="This is a reply to the parent comment",
+                content='This is a reply to the parent comment',
                 user_id=user.id,
                 post_id=post.id,
                 parent_id=parent_comment.id,
             ),
             Comment(
-                content="This is another reply to the parent comment",
+                content='This is another reply to the parent comment',
                 user_id=user.id,
                 post_id=post.id,
                 parent_id=parent_comment.id,
@@ -263,23 +264,23 @@ def self_referential_relationship(db: Session = Depends(get_db)):
         db.refresh(parent_comment)
 
     # Query comments with their replies
-    parent_comments = db.query(Comment).filter(Comment.parent_id is None).all()
+    parent_comments = db.query(Comment).filter(Comment.parent_id.is_(None)).all()
 
     # Return comments with their replies
     return {
-        "comments": [
+        'comments': [
             {
-                "id": comment.id,
-                "content": comment.content,
-                "replies": [
+                'id': comment.id,
+                'content': comment.content,
+                'replies': [
                     {
-                        "id": reply.id,
-                        "content": reply.content,
+                        'id': reply.id,
+                        'content': reply.content,
                     }
                     for reply in comment.replies
                 ],
             }
             for comment in parent_comments
         ],
-        "relationship_type": "self-referential",
+        'relationship_type': 'self-referential',
     }

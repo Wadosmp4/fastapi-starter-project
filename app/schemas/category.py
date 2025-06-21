@@ -42,6 +42,3 @@ class CategoryResponse(CategoryBase):
 # Extended response model with posts
 class CategoryDetailResponse(CategoryResponse):
     posts: list[PostInCategory] = []
-
-    class Config:
-        from_attributes = True

@@ -6,12 +6,12 @@ from app.database import Base
 
 
 class Profile(Base):
-    __tablename__ = "profiles"
+    __tablename__ = 'profiles'
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False,
         unique=True,
     )
@@ -23,4 +23,4 @@ class Profile(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # One-to-One: One profile belongs to one user
-    user = relationship("User", backref="profile", uselist=False)
+    user = relationship('User', backref='profile', uselist=False)

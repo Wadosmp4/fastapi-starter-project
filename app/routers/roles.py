@@ -6,10 +6,11 @@ from app.models.role import Role, UserRole
 from app.models.user import User
 from app.schemas.role import RoleCreate, RoleDetailResponse, RoleResponse, RoleUpdate
 
-router = APIRouter(prefix="/roles", tags=["Roles"])
+
+router = APIRouter(prefix='/roles', tags=['Roles'])
 
 
-@router.post("/", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
+@router.post('/', response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
 def create_role(role: RoleCreate, db: Session = Depends(get_db)):
     """Create a new role"""
     # Check if role with same name already exists
@@ -17,7 +18,7 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db)):
     if existing_role:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Role with this name already exists",
+            detail='Role with this name already exists',
         )
 
     # Create new role
@@ -31,26 +32,26 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db)):
     return new_role
 
 
-@router.get("/", response_model=list[RoleResponse])
+@router.get('/', response_model=list[RoleResponse])
 def get_roles(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all roles with pagination"""
     roles = db.query(Role).offset(skip).limit(limit).all()
     return roles
 
 
-@router.get("/{role_id}", response_model=RoleDetailResponse)
+@router.get('/{role_id}', response_model=RoleDetailResponse)
 def get_role(role_id: int, db: Session = Depends(get_db)):
     """Get a specific role by ID with associated users"""
     role = db.query(Role).filter(Role.id == role_id).first()
     if not role:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Role not found",
+            detail='Role not found',
         )
     return role
 
 
-@router.put("/{role_id}", response_model=RoleResponse)
+@router.put('/{role_id}', response_model=RoleResponse)
 def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get_db)):
     """Update a role"""
     # Get the existing role
@@ -58,7 +59,7 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
     if not db_role:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Role not found",
+            detail='Role not found',
         )
 
     # Check name uniqueness if name is being updated
@@ -67,7 +68,7 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Role with this name already exists",
+                detail='Role with this name already exists',
             )
 
     # Update role fields
@@ -80,7 +81,7 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
     return db_role
 
 
-@router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{role_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_role(role_id: int, db: Session = Depends(get_db)):
     """Delete a role"""
     # Get the existing role
@@ -88,7 +89,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
     if not db_role:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Role not found",
+            detail='Role not found',
         )
 
     # Delete the role
@@ -96,7 +97,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
     db.commit()
 
 
-@router.post("/{role_id}/users/{user_id}", response_model=RoleResponse)
+@router.post('/{role_id}/users/{user_id}', response_model=RoleResponse)
 def assign_role_to_user(role_id: int, user_id: int, db: Session = Depends(get_db)):
     """Assign a role to a user"""
     # Check if role exists
@@ -104,7 +105,7 @@ def assign_role_to_user(role_id: int, user_id: int, db: Session = Depends(get_db
     if not role:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Role not found",
+            detail='Role not found',
         )
 
     # Check if user exists
@@ -112,7 +113,7 @@ def assign_role_to_user(role_id: int, user_id: int, db: Session = Depends(get_db
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail='User not found',
         )
 
     # Check if the relationship already exists
@@ -127,7 +128,7 @@ def assign_role_to_user(role_id: int, user_id: int, db: Session = Depends(get_db
     return role
 
 
-@router.delete("/{role_id}/users/{user_id}", response_model=RoleResponse)
+@router.delete('/{role_id}/users/{user_id}', response_model=RoleResponse)
 def remove_role_from_user(role_id: int, user_id: int, db: Session = Depends(get_db)):
     """Remove a role from a user"""
     # Check if role exists
@@ -135,7 +136,7 @@ def remove_role_from_user(role_id: int, user_id: int, db: Session = Depends(get_
     if not role:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Role not found",
+            detail='Role not found',
         )
 
     # Check if the relationship exists

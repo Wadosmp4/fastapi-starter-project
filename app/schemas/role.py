@@ -42,6 +42,3 @@ class RoleResponse(RoleBase):
 # Extended response model with users
 class RoleDetailResponse(RoleResponse):
     users: list[UserInRole] = []
-
-    class Config:
-        from_attributes = True

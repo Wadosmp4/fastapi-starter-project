@@ -6,7 +6,7 @@ from app.database import Base
 
 
 class Category(Base):
-    __tablename__ = "categories"
+    __tablename__ = 'categories'
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
@@ -16,8 +16,8 @@ class Category(Base):
 
     # Many-to-Many: Categories can have many posts (using association class)
     post_categories = relationship(
-        "PostCategory",
-        back_populates="category",
-        cascade="all, delete-orphan",
+        'PostCategory',
+        back_populates='category',
+        cascade='all, delete-orphan',
     )
-    posts = relationship("Post", secondary="post_categories", viewonly=True)
+    posts = relationship('Post', secondary='post_categories', viewonly=True)
