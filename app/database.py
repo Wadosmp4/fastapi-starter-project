@@ -6,7 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 from app.config import config
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{config.POSTGRES_USER}:{config.POSTGRES_PASSWORD}@{config.POSTGRES_HOST}:{config.DATABASE_PORT}/{config.POSTGRES_DB}"
+
+SQLALCHEMY_DATABASE_URL = f'postgresql://{config.database.POSTGRES_USER}:{config.database.POSTGRES_PASSWORD}@{config.database.POSTGRES_HOST}:{config.database.DATABASE_PORT}/{config.database.POSTGRES_DB}'
 
 # Create a synchronous engine
 engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)

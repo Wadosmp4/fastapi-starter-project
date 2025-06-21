@@ -7,15 +7,16 @@ from fastapi.openapi.utils import get_openapi
 
 from app.config import LogConfig
 
+
 dictConfig(LogConfig().dict())
-logger = logging.getLogger("app")
+logger = logging.getLogger('app')
 
 app = FastAPI()
 
 
-@app.get("/")
+@app.get('/')
 def read_root() -> dict[str, str]:
-    return {"message": "Welcome to FastAPI Starter!"}
+    return {'message': 'Welcome to FastAPI Starter!'}
 
 
 def custom_openapi() -> dict[str, Any]:
@@ -23,9 +24,9 @@ def custom_openapi() -> dict[str, Any]:
         return app.openapi_schema
 
     openapi_schema = get_openapi(
-        title="Documentation",
-        version="1.0.0",
-        description="Docs for Starter Project",
+        title='Documentation',
+        version='1.0.0',
+        description='Docs for Starter Project',
         routes=app.routes,
     )
 
@@ -33,4 +34,4 @@ def custom_openapi() -> dict[str, Any]:
     return app.openapi_schema
 
 
-app.openapi = custom_openapi
+setattr(app, 'openapi', custom_openapi)

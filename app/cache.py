@@ -6,10 +6,10 @@ from app.config import config
 # Redis connection dependency
 async def get_redis():
     redis_client = Redis(
-        host=config.REDIS_HOST,
-        port=config.REDIS_PORT,
+        host=config.redis.REDIS_HOST,
+        port=config.redis.REDIS_PORT,
         decode_responses=True,
-        password=config.REDIS_PASSWORD,
+        password=config.redis.REDIS_PASSWORD,
     )
     try:
         yield redis_client  # Provide Redis instance to FastAPI

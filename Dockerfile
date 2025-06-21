@@ -3,7 +3,7 @@ FROM python:3.12-slim
 # Set the path to the virtual environment.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONFAULTHANDLER=1 
+    PYTHONFAULTHANDLER=1
 
 # Set the working directory.
 WORKDIR /app
